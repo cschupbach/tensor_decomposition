@@ -4,6 +4,15 @@ import numpy.linalg as LA
 
 
 class TuckerALS():
+    """Methods for Tucker-ALS (alternating least squares) tensor decomposition.
+
+    Parameters
+    ----------
+    max_iter : integer (default: 300)
+        Maximum number of ALS iterations.
+    tol : scalar (default: 1e-6)
+        Tolerance for ALS in terms of change in relative error.
+    """
     def __init__(self, max_iter=300, tol=1e-6):
         self.max_iter = max_iter
         self.tol = tol
@@ -74,24 +83,33 @@ class TuckerALS():
         B = np.einsum('abk,ck->abc', B, A_[2])
         return B
 
+    def _convert_err(self, A, err):
+        """Converts relative error returned by the 'als' to SSE
+        """
+        return np.square(err * LA.norm(A))
+
     def _als_output(self):
         print(f'Number of iterations: {self.itr}')
         print('Relative reconstruction error: {:.4f}'.format(self.err))
         return None
 
-    def als(self, A, rank, selection=0, verbose=0):
+    def _rs_output(self, label, aic, opt):
+        print(f'Label: {label}')
+        print('Minimum AIC: {:.2f}'.format(np.min(aic)))
+        print(f'Optimal Ranks: {opt}')
+        return None
+
+    def als(self, A, rank, verbose=0):
         """Third-order rank decomposition of tensor A using Tucker ALS.
 
         Parameters
         ----------
+        self : object
         A : array-like tensor, shape = (I, J, K)
-            The third-self._order tensor to be decomposed.
-        rank : array or list, length = 3
+            The third-order tensor to be decomposed.
+        rank : array-like, length = 3
             Desired rank-(I, J, K) of the decomposed core tensor.
-        max_iter : integer
-            Maximum number of iterations.
-        tol : scalar
-            Tolerance for the alternative least-squares (ALS) algorithm.
+        verbose : boolean
 
         Returns
         -------
@@ -115,32 +133,34 @@ class TuckerALS():
             self._als_output()
         return self
 
-    def _convert_err(self, A, err):
-        """Converts relative error returned by the 'als' to SSE
-        """
-        return np.square(err * LA.norm(A))
-
-    def _rs_output(self, subject_num, aic, opt):
-        print(f'Subject {subject_num}')
-        print('Minimum AIC: {:.2f}'.format(np.min(aic)))
-        print(f'Optimal Ranks: {opt}')
-        return None
-
-    def rank_selection(self, A, ranks, subject_num, selection=1, verbose=1):
+    def rank_selection(self, A, ranks, label='', verbose=1):
         """Obtain the optimal low-rank representation of 'A' using Akaike
         information criterion (AIC).
+
+        Parameters
+        ----------
+        A : array-like tensor, shape = (I, J, K)
+            The third-order tensor to be decomposed.
+        ranks : list of array-likes, length = 3
+            Desired ranks to iterate over for each dimension.
+        label : string or integer
+        verbose : boolean
+
+        Returns
+        -------
+        self : object
         """
         R1, R2, R3 = ranks
         aic = np.zeros((len(R1), len(R2), len(R3)))
         for i, I in enumerate(R1):
             for j, J in enumerate(R2):
                 for k, K in enumerate(R3):
-                    tucker = self.als(A, [I, J, K], selection=1)
+                    tucker = self.als(A, [I, J, K])
                     sse = self._convert_err(tucker.A, tucker.err)
                     aic[i,j,k] = 2*sse + 2*(I + J + K)
                     self.__init__()
         idx = np.array(np.where(aic == np.min(aic))).flatten()
         opt = np.array([R1[idx[0]], R2[idx[1]], R3[idx[2]]])
         if verbose:
-            self._rs_output(subject_num, aic, opt)
+            self._rs_output(label, aic, opt)
         return self.als(A, opt)
