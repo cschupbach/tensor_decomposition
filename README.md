@@ -4,7 +4,7 @@
 
 ![Tucker Decomposition](/fig/figure01.png "Tucker Decomposition")
 
-**Figure 1.** Diagram of Tucker decomposition applied to tensor $\mathcal{Y}$ [1].
+**Figure 1.** Diagram of Tucker decomposition applied to tensor $\mathbf{y}$ [1].
 
 # Citations
 1. L. Billiet, T. Swinnen, K. de Vlam, R. Westhovens, and S. Huffel, "Recognition of Physical Activities from a Single Arm-Worn Accelerometer: A Multiway Approach," *Informatics*, vol. 5, no. 2, p. 20, 2018. https://doi.org/10.3390/informatics5020020
